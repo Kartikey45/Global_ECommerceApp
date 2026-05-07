@@ -41,7 +41,7 @@ namespace ECommerceApp.Product.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Create(
             [FromBody] CreateCategoryDto dto)
         {
@@ -66,7 +66,7 @@ namespace ECommerceApp.Product.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _service.DeleteAsync(id);
