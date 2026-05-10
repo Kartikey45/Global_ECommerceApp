@@ -1,41 +1,100 @@
+using ECommerceApp.Payment.Consumers;
+using ECommerceApp.Payment.Data;
+using ECommerceApp.Payment.Repositories.Implementations;
+using ECommerceApp.Payment.Repositories.Interfaces;
+using ECommerceApp.Payment.Services.Implementations;
+using ECommerceApp.Payment.Services.Interfaces;
+using ECommerceApp.Shared.Helpers;
+using ECommerceApp.Shared.Middleware;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// ── Controllers ────────────────────────────────────────────────
+builder.Services.AddControllers();
+
+// ── Database — SQL Server Express ──────────────────────────────
+builder.Services.AddDbContext<PaymentDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration
+            .GetConnectionString("Default"),
+        sql => sql.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null)));
+
+// ── Repositories ───────────────────────────────────────────────
+builder.Services
+    .AddScoped<IPaymentRepository, PaymentRepository>();
+
+// ── Services ───────────────────────────────────────────────────
+builder.Services
+    .AddScoped<IPaymentService, PaymentService>();
+builder.Services
+    .AddScoped<IStripeService, StripeService>();
+
+// ── JWT Authentication ─────────────────────────────────────────
+builder.Services
+    .AddJwtAuthentication(builder.Configuration);
+
+// ── RabbitMQ + MassTransit ─────────────────────────────────────
+builder.Services.AddMassTransit(x =>
+{
+    // Register OrderPlacedConsumer with retry
+    x.AddConsumer<OrderPlacedConsumer>(cfg =>
+        cfg.UseMessageRetry(r =>
+            r.Intervals(
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(15),
+                TimeSpan.FromSeconds(30))));
+
+    // DLQ handler
+    x.AddConsumer<OrderPlacedFaultConsumer>();
+
+    x.UsingRabbitMq((ctx, cfg) =>
+    {
+        cfg.Host(
+            builder.Configuration["RabbitMQ:Host"],
+            builder.Configuration["RabbitMQ:VHost"],
+            h =>
+            {
+                h.Username(builder.Configuration[
+                    "RabbitMQ:Username"]!);
+                h.Password(builder.Configuration[
+                    "RabbitMQ:Password"]!);
+            });
+
+        cfg.ConfigureEndpoints(ctx);
+    });
+});
+
+// ── Swagger ────────────────────────────────────────────────────
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ── Middleware Pipeline ────────────────────────────────────────
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 
-var summaries = new[]
+// ── Auto Migrate on Startup ────────────────────────────────────
+using (var scope = app.Services.CreateScope())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var db = scope.ServiceProvider
+        .GetRequiredService<PaymentDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
