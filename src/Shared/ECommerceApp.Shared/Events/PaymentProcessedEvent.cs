@@ -10,6 +10,7 @@
         public decimal Amount { get; set; }
         public string? TransactionId { get; set; }
         public string? FailureReason { get; set; }
+        public string? ShippingAddress { get; set; }
         public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
     }
 }

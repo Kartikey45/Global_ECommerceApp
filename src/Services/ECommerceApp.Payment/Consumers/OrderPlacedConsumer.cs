@@ -37,7 +37,8 @@ namespace ECommerceApp.Payment.Consumers
                 evt.OrderId,
                 evt.UserId,
                 evt.UserEmail,
-                evt.TotalAmount);
+                evt.TotalAmount,
+                evt.ShippingAddress);
         }
     }
 

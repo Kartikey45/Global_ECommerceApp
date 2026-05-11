@@ -51,7 +51,8 @@ namespace ECommerceApp.Payment.Services.Implementations
             int orderId,
             string userId,
             string userEmail,
-            decimal amount)
+            decimal amount,
+            string shippingAddress)
         {
             // Prevent duplicate payment
             if (await _repo.ExistsCompletedAsync(orderId))
@@ -117,8 +118,8 @@ namespace ECommerceApp.Payment.Services.Implementations
                         UserEmail = userEmail,
                         IsSuccess = true,
                         Amount = amount,
-                        TransactionId =
-                            result.TransactionId,
+                        TransactionId = result.TransactionId,
+                        ShippingAddress = shippingAddress, // ← ADD
                         ProcessedAt = DateTime.UtcNow
                     });
             }

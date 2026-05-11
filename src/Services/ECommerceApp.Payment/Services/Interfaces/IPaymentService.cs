@@ -12,7 +12,8 @@ namespace ECommerceApp.Payment.Services.Interfaces
             int orderId,
             string userId,
             string userEmail,
-            decimal amount);
+            decimal amount,
+            string shippingAddress);
 
         Task<PaymentResponseDto?> ProcessRefundAsync(
             int paymentId);
