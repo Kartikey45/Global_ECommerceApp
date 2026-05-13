@@ -1,41 +1,102 @@
+using ECommerceApp.Analytics.Consumers;
+using ECommerceApp.Analytics.Data;
+using ECommerceApp.Analytics.Repositories.Implementations;
+using ECommerceApp.Analytics.Repositories.Interfaces;
+using ECommerceApp.Analytics.Services.Implementations;
+using ECommerceApp.Analytics.Services.Interfaces;
+using ECommerceApp.Shared.Helpers;
+using ECommerceApp.Shared.Middleware;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// ── Controllers ────────────────────────────────────────────────
+builder.Services.AddControllers();
+
+// ── Database — SQL Server Express ──────────────────────────────
+builder.Services.AddDbContext<AnalyticsDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration
+            .GetConnectionString("Default"),
+        sql => sql.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null)));
+
+// ── Repositories ───────────────────────────────────────────────
+builder.Services
+    .AddScoped<IAnalyticsRepository,
+        AnalyticsRepository>();
+
+// ── Services ───────────────────────────────────────────────────
+builder.Services
+    .AddScoped<IAnalyticsService, AnalyticsService>();
+
+// ── JWT Authentication ─────────────────────────────────────────
+builder.Services
+    .AddJwtAuthentication(builder.Configuration);
+
+// ── RabbitMQ + MassTransit ─────────────────────────────────────
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<OrderPlacedConsumer>(cfg =>
+        cfg.UseMessageRetry(r =>
+            r.Intervals(
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(15),
+                TimeSpan.FromSeconds(30))));
+
+    x.AddConsumer<PaymentProcessedConsumer>(cfg =>
+        cfg.UseMessageRetry(r =>
+            r.Intervals(
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(15),
+                TimeSpan.FromSeconds(30))));
+
+    x.UsingRabbitMq((ctx, cfg) =>
+    {
+        cfg.Host(
+            builder.Configuration["RabbitMQ:Host"],
+            builder.Configuration["RabbitMQ:VHost"],
+            h =>
+            {
+                h.Username(builder.Configuration[
+                    "RabbitMQ:Username"]!);
+                h.Password(builder.Configuration[
+                    "RabbitMQ:Password"]!);
+            });
+
+        cfg.ConfigureEndpoints(ctx);
+    });
+});
+
+// ── Swagger ────────────────────────────────────────────────────
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ── Middleware Pipeline ────────────────────────────────────────
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 
-var summaries = new[]
+// ── Auto Migrate on Startup ────────────────────────────────────
+using (var scope = app.Services.CreateScope())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var db = scope.ServiceProvider
+        .GetRequiredService<AnalyticsDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
