@@ -10,11 +10,11 @@
         "DELETE"
       ],
       "DownstreamPathTemplate": "/api/user/{everything}",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7254
+          "Port": 5001
         }
       ],
       "RouteId": "IdentityService-User"
@@ -29,14 +29,46 @@
         "DELETE"
       ],
       "DownstreamPathTemplate": "/api/role/{everything}",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7254
+          "Port": 5001
         }
       ],
       "RouteId": "IdentityService-Role"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/products",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/products",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "RouteId": "ProductService-List-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/products",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/products",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteId": "ProductService-Create-Auth"
     },
 
     {
@@ -60,13 +92,13 @@
         "AuthenticationProviderKey": "Bearer",
         "AllowedScopes": []
       },
-      "RouteId": "ProductService-Products"
+      "RouteId": "ProductService-Products-Auth"
     },
 
     {
-      "UpstreamPathTemplate": "/api/products",
+      "UpstreamPathTemplate": "/api/categories",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/api/products",
+      "DownstreamPathTemplate": "/api/categories",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -74,7 +106,7 @@
           "Port": 5002
         }
       ],
-      "RouteId": "ProductService-Products-List"
+      "RouteId": "ProductService-Categories-Public"
     },
 
     {
@@ -88,25 +120,11 @@
           "Port": 5002
         }
       ],
-      "RouteId": "ProductService-Categories"
-    },
-
-    {
-      "UpstreamPathTemplate": "/api/orders/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
-      "DownstreamPathTemplate": "/api/orders/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5003
-        }
-      ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer",
         "AllowedScopes": []
       },
-      "RouteId": "OrderService-Orders"
+      "RouteId": "ProductService-Categories-Auth"
     },
 
     {
@@ -125,6 +143,24 @@
         "AllowedScopes": []
       },
       "RouteId": "OrderService-Orders-Root"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/orders/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
+      "DownstreamPathTemplate": "/api/orders/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteId": "OrderService-Orders"
     },
 
     {
@@ -161,6 +197,20 @@
         "AllowedScopes": []
       },
       "RouteId": "ShippingService-Shipping"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/analytics/events/track",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/analytics/events/track",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5007
+        }
+      ],
+      "RouteId": "AnalyticsService-Track-Public"
     },
 
     {
