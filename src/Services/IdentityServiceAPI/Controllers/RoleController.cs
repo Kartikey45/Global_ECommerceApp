@@ -1,6 +1,8 @@
-﻿using IdentityServiceAPI.Data;
+﻿using IdentityServiceAPI.Authorization;
+using IdentityServiceAPI.Data;
 using IdentityServiceAPI.Models.EntityModels;
 using IdentityServiceAPI.Models.Role;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +23,8 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpPost]
-        [DynamicPermission("Create")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.Create)]
         public async Task<IActionResult> CreateRole([FromBody] RoleDto roleDto)
         {
 
@@ -72,7 +75,8 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet]
-        [DynamicPermission("View")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public IActionResult GetAllRoles()
         {
             var roles = _roleManager.Roles.ToList();
@@ -84,7 +88,8 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [DynamicPermission("View")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetRole(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
@@ -95,7 +100,8 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [DynamicPermission("Edit")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.Edit)]
         public async Task<IActionResult> UpdateRole(string id, [FromBody] RoleDto roleDto)
         {
             if (!ModelState.IsValid)
@@ -157,7 +163,8 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [DynamicPermission("Delete")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.Delete)]
         public async Task<IActionResult> DeleteRole(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);

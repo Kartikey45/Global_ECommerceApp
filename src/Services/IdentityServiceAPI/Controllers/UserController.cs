@@ -1,9 +1,11 @@
-﻿using IdentityServiceAPI.Data;
+﻿using IdentityServiceAPI.Authorization;
+using IdentityServiceAPI.Data;
 using IdentityServiceAPI.Models;
 using IdentityServiceAPI.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace IdentityServiceAPI.Controllers
@@ -14,34 +16,61 @@ namespace IdentityServiceAPI.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserService _userService;
         private readonly IEmailService _emailService;
-        private readonly ITokenService _tokenService;
-        private readonly ApplicationDbContext _dbContext;
+        private readonly ITokenBlocklistService _tokenBlocklistService;
 
 
-        public UserController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager,
-            IUserService userService, IEmailService emailService, ITokenService tokenService, ApplicationDbContext dbContext)
+        public UserController(UserManager<User> userManager, SignInManager<User> signInManager, 
+            IUserService userService, IEmailService emailService, 
+            ITokenBlocklistService tokenBlocklistService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _userService = userService;
             _emailService = emailService;
-            _tokenService = tokenService;
-            _roleManager = roleManager;
-            _dbContext = dbContext;
+            _tokenBlocklistService = tokenBlocklistService;
         }
 
 
         #region User Management
 
-        [HttpGet("logout"), Authorize(Roles = "admin")]
+        /// <summary>
+        /// Logs the caller out by revoking the bearer token used to
+        /// make this request. The token is rejected from here on,
+        /// even though it has not yet expired.
+        /// </summary>
+        [HttpPost("logout")]
+        [Authorize(Roles = Role.Groups.All)]
         public async Task<ActionResult> LogoutUser()
         {
-            string message = "You are free to go !";
             try
             {
+                var jti = User.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+                if (string.IsNullOrEmpty(jti))
+                {
+                    // Token predates the jti claim — issued before this
+                    // feature existed. It cannot be revoked individually.
+                    return BadRequest(new
+                    {
+                        message = "This token cannot be revoked. " +
+                                  "Please sign in again to get a new one."
+                    });
+                }
+
+                // "exp" is seconds since the Unix epoch.
+                var expClaim = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+                var expiresAt = long.TryParse(expClaim, out var expUnix)
+                    ? DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime
+                    : DateTime.UtcNow.AddHours(2);
+
+                await _tokenBlocklistService
+                    .RevokeAsync(jti, _userService.GetUserId(), expiresAt)
+                    .ConfigureAwait(false);
+
+                // Clears the Identity cookie as well, for any part of the
+                // app still using cookie auth. Harmless for pure JWT calls.
                 await _signInManager.SignOutAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -49,10 +78,12 @@ namespace IdentityServiceAPI.Controllers
                 return BadRequest("something went wrong, please try again." + ex.Message);
             }
 
-            return Ok(new { message = message });
+            return Ok(new { message = "Logged out. This token is no longer valid." });
         }
 
-        [HttpGet("admin"), Authorize(Roles = "admin")]
+        [HttpGet("admin")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public ActionResult AdminPage()
         {
             string[] partners =
@@ -62,7 +93,9 @@ namespace IdentityServiceAPI.Controllers
             return Ok(new { trustedPartners = partners });
         }
 
-        [HttpGet("home/{email}"), Authorize(Roles = "admin")]
+        [HttpGet("home/{email}")]
+        [Authorize(Roles = Role.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<ActionResult> HomePage(string email)
         {
             var _userInfo = await _userManager.FindByEmailAsync(email).ConfigureAwait(false);
@@ -73,7 +106,8 @@ namespace IdentityServiceAPI.Controllers
             return Ok(new { userInfo = _userInfo });
         }
 
-        [HttpGet("check-authentication"), Authorize(Roles = "admin")]
+        [HttpGet("check-authentication")]
+        [Authorize(Roles = Role.Groups.All)]
         public async Task<ActionResult> CheckUser()
         {
             string message = "logged in";
@@ -101,7 +135,8 @@ namespace IdentityServiceAPI.Controllers
             return Ok(new { message = message, user = currentUser });
         }
 
-        [HttpPost("change-password"), Authorize(Roles = "admin")]
+        [HttpPost("change-password")]
+        [Authorize(Roles = Role.Groups.All)]
         public async Task<ActionResult> ChangePassword(ChangePasswordDto model)
         {
             IdentityResult result = null;
@@ -203,8 +238,7 @@ namespace IdentityServiceAPI.Controllers
         #endregion
 
         #region Authenticate
-
-        [HttpPost("add-user")]
+        [AllowAnonymous, HttpPost("add-user")]
         public async Task<ActionResult> AddUser([FromBody] SignUpUserDto signUpUser)
         {
             if (!ModelState.IsValid)
@@ -233,7 +267,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
 
-        [HttpPost("authenticate")]
+        [AllowAnonymous, HttpPost("authenticate")]
         public async Task<IActionResult> Authenticate([FromBody] SignInUserDto loginDto)
         {
             if (!ModelState.IsValid)

@@ -1,11 +1,15 @@
-﻿using IdentityServiceAPI.Data;
+﻿using IdentityServiceAPI.Authorization;
+using IdentityServiceAPI.Data;
 using IdentityServiceAPI.Models;
 using IdentityServiceAPI.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace IdentityServiceAPI.Extensions
@@ -93,6 +97,41 @@ namespace IdentityServiceAPI.Extensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                     //ClockSkew = TimeSpan.FromMinutes(5)
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    // A JWT stays cryptographically valid until it expires,
+                    // so logout has to be enforced here: reject any token
+                    // whose jti was recorded by the logout endpoint.
+                    OnTokenValidated = async ctx =>
+                    {
+                        var jti = ctx.Principal?.FindFirstValue(
+                            JwtRegisteredClaimNames.Jti);
+
+                        if (string.IsNullOrEmpty(jti))
+                            return;
+
+                        var blocklist = ctx.HttpContext.RequestServices
+                            .GetRequiredService<ITokenBlocklistService>();
+
+                        if (await blocklist.IsRevokedAsync(jti))
+                        {
+                            ctx.Fail("This token has been logged out.");
+                        }
+                    },
+
+                    OnChallenge = ctx =>
+                    {
+                        // Surface the reason so Postman/Swagger shows
+                        // "logged out" instead of a bare 401.
+                        if (ctx.AuthenticateFailure is not null)
+                        {
+                            ctx.Response.Headers.Append(
+                                "Token-Revoked", "true");
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             return services;
@@ -104,6 +143,17 @@ namespace IdentityServiceAPI.Extensions
         public static IServiceCollection AddAuthorizationServices(this IServiceCollection services)
         {
             services.AddAuthorization();
+
+            // ── Permission-based authorization ────────────────────────
+            // Resolves "Permission:{name}" policies on demand, so
+            // [HasPermission("...")] works for any permission in the
+            // Permissions table without a startup registration.
+            services.AddSingleton<
+                IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
+            services.AddScoped<
+                IAuthorizationHandler, PermissionAuthorizationHandler>();
+
             return services;
         }
 
@@ -153,6 +203,7 @@ namespace IdentityServiceAPI.Extensions
             services.AddScoped<IUserClaimsPrincipalFactory<User>, ApplicationUserClaimsPricipalFactory>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<ITokenBlocklistService, TokenBlocklistService>();
 
             services.Configure<SMTPConfigModel>(configuration.GetSection("SMTPConfig"));
 

@@ -22,7 +22,11 @@ namespace IdentityServiceAPI.Service
             {
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.NameIdentifier, user.Id)
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+
+                // Unique id for this token. Logout records this value
+                // so the exact token can be rejected before expiry.
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
             // Add role claims
