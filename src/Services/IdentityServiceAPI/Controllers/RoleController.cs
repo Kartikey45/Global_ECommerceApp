@@ -1,4 +1,5 @@
-﻿using IdentityServiceAPI.Authorization;
+﻿using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using IdentityServiceAPI.Data;
 using IdentityServiceAPI.Models.EntityModels;
 using IdentityServiceAPI.Models.Role;
@@ -23,7 +24,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.Create)]
         public async Task<IActionResult> CreateRole([FromBody] RoleDto roleDto)
         {
@@ -75,7 +76,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.View)]
         public IActionResult GetAllRoles()
         {
@@ -88,7 +89,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.View)]
         public async Task<IActionResult> GetRole(string id)
         {
@@ -100,7 +101,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.Edit)]
         public async Task<IActionResult> UpdateRole(string id, [FromBody] RoleDto roleDto)
         {
@@ -163,7 +164,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.Delete)]
         public async Task<IActionResult> DeleteRole(string id)
         {

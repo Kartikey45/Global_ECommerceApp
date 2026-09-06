@@ -1,6 +1,8 @@
 ﻿using ECommerceApp.Order.DTOs.Request;
 using ECommerceApp.Order.Enums;
 using ECommerceApp.Order.Services.Interfaces;
+using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using ECommerceApp.Shared.Helpers;
 using ECommerceApp.Shared.Wrappers;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +12,7 @@ namespace ECommerceApp.Order.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = Roles.Groups.All)]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _service;
@@ -42,7 +44,8 @@ namespace ECommerceApp.Order.Controllers
         /// Get all orders — Admin only
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetAll(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
@@ -142,7 +145,8 @@ namespace ECommerceApp.Order.Controllers
         /// Force update order status — Admin only
         /// </summary>
         [HttpPut("{id:int}/status")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Edit)]
         public async Task<IActionResult> UpdateStatus(
             int id, [FromQuery] OrderStatus status)
         {

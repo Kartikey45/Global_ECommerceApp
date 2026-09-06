@@ -1,4 +1,5 @@
-﻿using IdentityServiceAPI.Authorization;
+﻿using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using IdentityServiceAPI.Data;
 using IdentityServiceAPI.Models;
 using IdentityServiceAPI.Service;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -175,20 +176,17 @@ namespace IdentityServiceAPI.Extensions
                     Description = "Enter your JWT token in the format: Bearer {your token}"
                 });
 
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
+                // OpenAPI 3.x (Swashbuckle 10) replaced OpenApiReference
+                // with typed reference classes, and AddSecurityRequirement
+                // now takes a factory over the document.
+                options.AddSecurityRequirement(_ =>
+                    new OpenApiSecurityRequirement
                     {
-                        new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
+                            new OpenApiSecuritySchemeReference("Bearer"),
+                            new List<string>()
+                        }
+                    });
             });
 
             return services;

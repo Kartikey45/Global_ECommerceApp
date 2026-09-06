@@ -65,7 +65,7 @@ namespace ECommerceApp.Shared.Helpers
         }
 
         // ── Maps to: custom "Permission" claims (multiple) ────
-        // (used by DynamicPermissionAttribute in Identity Svc)
+        // (enforced by HasPermissionAttribute)
         public static IEnumerable<string> GetPermissions(
             this ClaimsPrincipal user)
         {

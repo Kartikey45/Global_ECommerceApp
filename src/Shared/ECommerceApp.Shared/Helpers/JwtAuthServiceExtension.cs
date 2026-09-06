@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,29 +93,46 @@ namespace ECommerceApp.Shared.Helpers
             // ── Authorization policies matching your roles ────
             services.AddAuthorization(options =>
             {
-                // Matches: [Authorize(Roles = "Admin")]
+                // Role names must match AspNetRoles exactly — these
+                // previously used lowercase "admin"/"customer", which
+                // matches no row in the database.
                 options.AddPolicy("AdminOnly",
-                    p => p.RequireRole("admin"));
+                    p => p.RequireRole(Roles.Groups.Admins.Split(',')));
 
                 // For customer-facing endpoints
                 options.AddPolicy("CustomerOnly",
-                    p => p.RequireRole("customer"));
+                    p => p.RequireRole(Roles.Customer));
 
                 // Either role can access
                 options.AddPolicy("CustomerOrAdmin",
-                    p => p.RequireRole("customer", "admin"));
+                    p => p.RequireRole(Roles.Groups.All.Split(',')));
 
                 // ── Permission-based policies ─────────────────
-                // Matches your DynamicPermissionAttribute logic
+                // Kept for callers using [Authorize(Policy = "CanEdit")].
+                // Prefer [HasPermission(Permission.Edit)] for new code.
                 options.AddPolicy("CanView",
-                    p => p.RequireClaim("Permission", "View"));
+                    p => p.RequireClaim(
+                        Permission.ClaimType, Permission.View));
                 options.AddPolicy("CanCreate",
-                    p => p.RequireClaim("Permission", "Create"));
+                    p => p.RequireClaim(
+                        Permission.ClaimType, Permission.Create));
                 options.AddPolicy("CanEdit",
-                    p => p.RequireClaim("Permission", "Edit"));
+                    p => p.RequireClaim(
+                        Permission.ClaimType, Permission.Edit));
                 options.AddPolicy("CanDelete",
-                    p => p.RequireClaim("Permission", "Delete"));
+                    p => p.RequireClaim(
+                        Permission.ClaimType, Permission.Delete));
             });
+
+            // ── Permission-based authorization ────────────────
+            // Resolves "Permission:{name}" policies on demand so
+            // [HasPermission("...")] works in every service without
+            // per-permission startup registration.
+            services.AddSingleton<
+                IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
+            services.AddScoped<
+                IAuthorizationHandler, PermissionAuthorizationHandler>();
 
             return services;
         }

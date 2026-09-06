@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace IdentityServiceAPI.Authorization
+namespace ECommerceApp.Shared.Authorization
 {
     /// <summary>
     /// Requires the caller's token to carry a given permission.

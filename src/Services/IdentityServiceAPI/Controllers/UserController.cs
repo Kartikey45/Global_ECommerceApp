@@ -1,5 +1,5 @@
-﻿using IdentityServiceAPI.Authorization;
-using IdentityServiceAPI.Data;
+﻿using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using IdentityServiceAPI.Models;
 using IdentityServiceAPI.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -41,7 +41,7 @@ namespace IdentityServiceAPI.Controllers
         /// even though it has not yet expired.
         /// </summary>
         [HttpPost("logout")]
-        [Authorize(Roles = Role.Groups.All)]
+        [Authorize(Roles = Roles.Groups.All)]
         public async Task<ActionResult> LogoutUser()
         {
             try
@@ -82,7 +82,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet("admin")]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.View)]
         public ActionResult AdminPage()
         {
@@ -94,7 +94,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet("home/{email}")]
-        [Authorize(Roles = Role.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.Admins)]
         [HasPermission(Permission.View)]
         public async Task<ActionResult> HomePage(string email)
         {
@@ -107,7 +107,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet("check-authentication")]
-        [Authorize(Roles = Role.Groups.All)]
+        [Authorize(Roles = Roles.Groups.All)]
         public async Task<ActionResult> CheckUser()
         {
             string message = "logged in";
@@ -136,7 +136,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpPost("change-password")]
-        [Authorize(Roles = Role.Groups.All)]
+        [Authorize(Roles = Roles.Groups.All)]
         public async Task<ActionResult> ChangePassword(ChangePasswordDto model)
         {
             IdentityResult result = null;

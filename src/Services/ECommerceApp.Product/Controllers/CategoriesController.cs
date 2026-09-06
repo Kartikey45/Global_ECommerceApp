@@ -1,5 +1,7 @@
 ﻿using ECommerceApp.Product.DTOs.Request;
 using ECommerceApp.Product.Services.Interfaces;
+using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using ECommerceApp.Shared.Wrappers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,7 +43,8 @@ namespace ECommerceApp.Product.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Create)]
         public async Task<IActionResult> Create(
             [FromBody] CreateCategoryDto dto)
         {
@@ -66,7 +69,8 @@ namespace ECommerceApp.Product.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _service.DeleteAsync(id);

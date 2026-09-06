@@ -1,4 +1,6 @@
 ﻿using ECommerceApp.Payment.Services.Interfaces;
+using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using ECommerceApp.Shared.Helpers;
 using ECommerceApp.Shared.Wrappers;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +10,7 @@ namespace ECommerceApp.Payment.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = Roles.Groups.All)]
     public class PaymentsController : ControllerBase
     {
         private readonly IPaymentService _service;
@@ -73,7 +75,8 @@ namespace ECommerceApp.Payment.Controllers
         /// Process refund for a payment — Admin only
         /// </summary>
         [HttpPost("{id:int}/refund")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Edit)]
         public async Task<IActionResult> Refund(int id)
         {
             var payment =

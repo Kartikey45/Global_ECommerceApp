@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
-namespace IdentityServiceAPI.Authorization
+namespace ECommerceApp.Shared.Authorization
 {
     /// <summary>
     /// Builds an authorization policy on demand for any policy name
@@ -9,15 +9,15 @@ namespace IdentityServiceAPI.Authorization
     ///
     /// Without this, every permission would need an explicit
     /// AddPolicy(...) call at startup. This lets [HasPermission("X")]
-    /// work for any X — including permissions added to the DB later —
-    /// with no startup change.
+    /// work for any X — including permissions added to the Identity
+    /// database later — with no startup change in any service.
     /// </summary>
     public class PermissionPolicyProvider : IAuthorizationPolicyProvider
     {
         public const string Prefix = "Permission:";
 
-        // Handles anything that is not a permission policy
-        // (e.g. [Authorize(Roles = "...")] and plain [Authorize]).
+        // Handles anything that is not a permission policy —
+        // [Authorize(Roles = "...")], named policies, plain [Authorize].
         private readonly DefaultAuthorizationPolicyProvider _fallback;
 
         public PermissionPolicyProvider(

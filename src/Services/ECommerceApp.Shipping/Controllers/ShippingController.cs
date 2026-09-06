@@ -1,5 +1,7 @@
 ﻿using ECommerceApp.Shipping.Enums;
 using ECommerceApp.Shipping.Services.Interfaces;
+using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using ECommerceApp.Shared.Helpers;
 using ECommerceApp.Shared.Wrappers;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +25,7 @@ namespace ECommerceApp.Shipping.Controllers
         /// Get shipment by ID
         /// </summary>
         [HttpGet("{id:int}")]
-        [Authorize]
+        [Authorize(Roles = Roles.Groups.All)]
         public async Task<IActionResult> GetById(int id)
         {
             var shipment = await _service.GetByIdAsync(id);
@@ -48,7 +50,7 @@ namespace ECommerceApp.Shipping.Controllers
         /// Get shipment by Order ID
         /// </summary>
         [HttpGet("order/{orderId:int}")]
-        [Authorize]
+        [Authorize(Roles = Roles.Groups.All)]
         public async Task<IActionResult> GetByOrderId(
             int orderId)
         {
@@ -108,7 +110,7 @@ namespace ECommerceApp.Shipping.Controllers
         /// Get all shipments for logged-in user
         /// </summary>
         [HttpGet("my-shipments")]
-        [Authorize]
+        [Authorize(Roles = Roles.Groups.All)]
         public async Task<IActionResult> GetMyShipments()
         {
             var userId = User.GetUserId();
@@ -122,7 +124,8 @@ namespace ECommerceApp.Shipping.Controllers
         /// Update shipment status — Admin only
         /// </summary>
         [HttpPut("{id:int}/status")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Edit)]
         public async Task<IActionResult> UpdateStatus(
             int id,
             [FromQuery] ShipmentStatus status)

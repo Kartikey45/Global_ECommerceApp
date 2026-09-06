@@ -1,5 +1,7 @@
 ﻿using ECommerceApp.Analytics.DTOs.Request;
 using ECommerceApp.Analytics.Services.Interfaces;
+using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using ECommerceApp.Shared.Helpers;
 using ECommerceApp.Shared.Wrappers;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +26,8 @@ namespace ECommerceApp.Analytics.Controllers
         /// Orders + Revenue + Top Products + Peak Hours
         /// </summary>
         [HttpGet("dashboard")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetDashboard()
         {
             var result =
@@ -37,7 +40,8 @@ namespace ECommerceApp.Analytics.Controllers
         /// — Admin only
         /// </summary>
         [HttpGet("orders/summary")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetOrderSummary(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
@@ -52,7 +56,8 @@ namespace ECommerceApp.Analytics.Controllers
         /// Daily revenue for last N days — Admin only
         /// </summary>
         [HttpGet("orders/revenue")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetDailyRevenue(
             [FromQuery] int days = 7)
         {
@@ -66,7 +71,8 @@ namespace ECommerceApp.Analytics.Controllers
         /// Top N products by views/purchases — Admin only
         /// </summary>
         [HttpGet("products/top")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetTopProducts(
             [FromQuery] int topN = 10)
         {
@@ -80,7 +86,8 @@ namespace ECommerceApp.Analytics.Controllers
         /// Peak order hours — Admin only
         /// </summary>
         [HttpGet("orders/peak-hours")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.View)]
         public async Task<IActionResult> GetPeakHours()
         {
             var result =

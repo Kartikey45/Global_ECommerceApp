@@ -1,5 +1,7 @@
 ﻿using ECommerceApp.Product.DTOs.Request;
 using ECommerceApp.Product.Services.Interfaces;
+using ECommerceApp.Shared.Authorization;
+using ECommerceApp.Shared.Constants;
 using ECommerceApp.Shared.Helpers;
 using ECommerceApp.Shared.Wrappers;
 using Microsoft.AspNetCore.Authorization;
@@ -75,7 +77,8 @@ namespace ECommerceApp.Product.Controllers
 
         /// <summary>Create product. Admin only.</summary>
         [HttpPost]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Create)]
         public async Task<IActionResult> Create(
             [FromBody] CreateProductDto dto)
         {
@@ -100,7 +103,8 @@ namespace ECommerceApp.Product.Controllers
 
         /// <summary>Update product. Admin only.</summary>
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Edit)]
         public async Task<IActionResult> Update(
             int id, [FromBody] UpdateProductDto dto)
         {
@@ -119,7 +123,8 @@ namespace ECommerceApp.Product.Controllers
 
         /// <summary>Soft delete product. Admin only.</summary>
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _service.DeleteAsync(id);
@@ -138,7 +143,8 @@ namespace ECommerceApp.Product.Controllers
         /// Called by Order Service internally.
         /// </summary>
         [HttpPatch("{id:int}/stock")]
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = Roles.Groups.Admins)]
+        [HasPermission(Permission.Edit)]
         public async Task<IActionResult> UpdateStock(
             int id, [FromBody] UpdateStockDto dto)
         {
