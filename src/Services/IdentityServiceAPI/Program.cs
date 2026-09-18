@@ -1,3 +1,4 @@
+using ECommerceApp.Shared.Middleware;
 using IdentityServiceAPI.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("ReactPolicy");
+
+// Rejects any request that did not come through the API Gateway.
+// Must run before authentication so a bypass attempt never
+// reaches token validation at all.
+app.UseMiddleware<RequireGatewayMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

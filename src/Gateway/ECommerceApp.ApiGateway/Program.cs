@@ -56,6 +56,11 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Stamps the shared secret header on every request just before
+// Ocelot proxies it, so downstream services can trust it came
+// through the gateway.
+app.UseMiddleware<GatewaySecretHeaderMiddleware>();
+
 // ── Ocelot handles all routing ─────────────────────────────────
 // Must be last in pipeline
 await app.UseOcelot();

@@ -21,6 +21,20 @@
     },
 
     {
+      "UpstreamPathTemplate": "/api/role",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/role",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-Role-Root"
+    },
+
+    {
       "UpstreamPathTemplate": "/api/role/{everything}",
       "UpstreamHttpMethod": [
         "GET",
@@ -107,6 +121,24 @@
         }
       ],
       "RouteId": "ProductService-Categories-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/categories",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/categories",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteId": "ProductService-Categories-Create-Auth"
     },
 
     {

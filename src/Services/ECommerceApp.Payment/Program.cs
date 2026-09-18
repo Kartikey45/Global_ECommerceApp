@@ -78,6 +78,11 @@ var app = builder.Build();
 // ── Middleware Pipeline ────────────────────────────────────────
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Rejects any request that did not come through the API Gateway.
+// Must run before authentication so a bypass attempt never
+// reaches token validation at all.
+app.UseMiddleware<RequireGatewayMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
