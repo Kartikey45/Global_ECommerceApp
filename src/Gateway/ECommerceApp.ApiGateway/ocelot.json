@@ -2,6 +2,90 @@
   "Routes": [
 
     {
+      "UpstreamPathTemplate": "/api/user/add-user",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/user/add-user",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-User-AddUser-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/user/authenticate",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/user/authenticate",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-User-Authenticate-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/user/confirm-email",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/user/confirm-email",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-User-ConfirmEmail-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/user/resend-email-confirmation-mail",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/user/resend-email-confirmation-mail",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-User-ResendConfirmation-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/user/forgot-password",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/user/forgot-password",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-User-ForgotPassword-Public"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/user/reset-password",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/user/reset-password",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "RouteId": "IdentityService-User-ResetPassword-Public"
+    },
+
+    {
       "UpstreamPathTemplate": "/api/user/{everything}",
       "UpstreamHttpMethod": [
         "GET",
@@ -17,6 +101,10 @@
           "Port": 5001
         }
       ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteId": "IdentityService-User"
     },
 
@@ -31,6 +119,10 @@
           "Port": 5001
         }
       ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteId": "IdentityService-Role-Root"
     },
 
@@ -50,6 +142,10 @@
           "Port": 5001
         }
       ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteId": "IdentityService-Role"
     },
 
@@ -211,6 +307,20 @@
         "AllowedScopes": []
       },
       "RouteId": "PaymentService-Payments"
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/shipping/track/{trackingNumber}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/shipping/track/{trackingNumber}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5005
+        }
+      ],
+      "RouteId": "ShippingService-Track-Public"
     },
 
     {

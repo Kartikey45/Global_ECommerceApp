@@ -96,7 +96,9 @@ namespace IdentityServiceAPI.Service
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 if (!string.IsNullOrEmpty(token))
                 {
-                    await _emailService.SendEmailForConfirmation(user, token);
+                    
+                    // temporary commented out for now, as email service is not implemented yet
+                    //await _emailService.SendEmailForConfirmation(user, token);
                 }
 
                 result.Success = true;
