@@ -40,6 +40,21 @@ namespace IdentityServiceAPI.Controllers
         /// make this request. The token is rejected from here on,
         /// even though it has not yet expired.
         /// </summary>
+        /// <summary>
+        /// Internal check used by every service's JWT authentication
+        /// to reject requests bearing a token that has been logged
+        /// out. Not meant to be called by end clients — reachable
+        /// only because callers are other services past
+        /// RequireGatewayMiddleware, not public clients.
+        /// </summary>
+        [HttpGet("token-status/{jti}")]
+        [AllowAnonymous]
+        public async Task<ActionResult> GetTokenStatus(string jti)
+        {
+            var revoked = await _tokenBlocklistService.IsRevokedAsync(jti);
+            return Ok(new { revoked });
+        }
+
         [HttpPost("logout")]
         [Authorize(Roles = Roles.Groups.All)]
         public async Task<ActionResult> LogoutUser()
@@ -82,7 +97,7 @@ namespace IdentityServiceAPI.Controllers
         }
 
         [HttpGet("admin")]
-        [Authorize(Roles = Roles.Groups.Admins)]
+        [Authorize(Roles = Roles.Groups.All)]
         [HasPermission(Permission.View)]
         public ActionResult AdminPage()
         {

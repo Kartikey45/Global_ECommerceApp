@@ -1,12 +1,17 @@
 ﻿using ECommerceApp.Shared.Authorization;
 using ECommerceApp.Shared.Constants;
+using ECommerceApp.Shared.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace ECommerceApp.Shared.Helpers
 {
@@ -35,6 +40,21 @@ namespace ECommerceApp.Shared.Helpers
                     "Ensure Jwt:Key, Jwt:Issuer, and " +
                     "Jwt:Audience are set.");
             }
+
+            // Lets this service ask Identity whether a token's jti
+            // was revoked by logout, the same way each service
+            // already asks nothing else of Identity at request time.
+            services.AddHttpClient("IdentityInternal", client =>
+            {
+                var identityBaseUrl =
+                    configuration["IdentityService:BaseUrl"]
+                    ?? throw new InvalidOperationException(
+                        "IdentityService:BaseUrl is not configured. " +
+                        "Every service needs it to check token " +
+                        "revocation on logout.");
+
+                client.BaseAddress = new Uri(identityBaseUrl);
+            });
 
             services
                 .AddAuthentication(options =>
@@ -69,6 +89,68 @@ namespace ECommerceApp.Shared.Helpers
 
                     options.Events = new JwtBearerEvents
                     {
+                        // A JWT stays cryptographically valid until it
+                        // expires, so logout has to be enforced here:
+                        // ask Identity whether this jti was revoked.
+                        OnTokenValidated = async ctx =>
+                        {
+                            var jti = ctx.Principal?.FindFirstValue(
+                                JwtRegisteredClaimNames.Jti);
+
+                            if (string.IsNullOrEmpty(jti))
+                                return;
+
+                            var httpClientFactory = ctx.HttpContext
+                                .RequestServices
+                                .GetRequiredService<IHttpClientFactory>();
+
+                            var gatewaySecret = ctx.HttpContext
+                                .RequestServices
+                                .GetRequiredService<IConfiguration>()
+                                ["Gateway:Secret"];
+
+                            var client = httpClientFactory
+                                .CreateClient("IdentityInternal");
+
+                            using var request = new HttpRequestMessage(
+                                HttpMethod.Get,
+                                $"/api/user/token-status/{jti}");
+
+                            request.Headers.Add(
+                                RequireGatewayMiddleware.HeaderName,
+                                gatewaySecret);
+
+                            try
+                            {
+                                var response =
+                                    await client.SendAsync(request);
+
+                                if (!response.IsSuccessStatusCode)
+                                    return;
+
+                                var body = await response.Content
+                                    .ReadAsStringAsync();
+
+                                using var doc = JsonDocument.Parse(body);
+
+                                if (doc.RootElement
+                                        .GetProperty("revoked")
+                                        .GetBoolean())
+                                {
+                                    ctx.Fail(
+                                        "This token has been " +
+                                        "logged out.");
+                                }
+                            }
+                            catch (HttpRequestException)
+                            {
+                                // Identity being unreachable should not
+                                // be treated as a revoked token — let
+                                // the request through on signature and
+                                // lifetime validity alone.
+                            }
+                        },
+
                         OnAuthenticationFailed = ctx =>
                         {
                             if (ctx.Exception
@@ -136,5 +218,10 @@ namespace ECommerceApp.Shared.Helpers
 
             return services;
         }
+
+        private static string? FindFirstValue(
+            this ClaimsPrincipal principal, string claimType)
+            => principal.Claims
+                .FirstOrDefault(c => c.Type == claimType)?.Value;
     }
 }
